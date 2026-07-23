@@ -1,0 +1,9 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="720" fill="#121826"/>
+  <rect x="56" y="56" width="1168" height="608" rx="36" fill="#0B0F17" stroke="#243044" stroke-width="4"/>
+  <path d="M422 391C402.118 391 386 374.882 386 355V338C386 318.118 402.118 302 422 302H858C877.882 302 894 318.118 894 338V355C894 374.882 877.882 391 858 391H422Z" fill="#243044"/>
+  <path d="M498 338H541V295H583V338H626V380H583V423H541V380H498V338Z" fill="#22D3EE"/>
+  <circle cx="740" cy="359" r="27" fill="#7C3AED"/>
+  <circle cx="818" cy="359" r="27" fill="#22D3EE"/>
+  <text x="640" y="510" fill="#94A3B8" font-family="Arial, sans-serif" font-size="34" text-anchor="middle">Gaming Feed</text>
+</svg>
