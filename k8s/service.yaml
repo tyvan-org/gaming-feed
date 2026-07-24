@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gaming-feed
+  namespace: gaming-feed
+  labels:
+    app: gaming-feed
+spec:
+  selector:
+    app: gaming-feed
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

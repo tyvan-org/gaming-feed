@@ -1,0 +1,245 @@
+name: Deploy to k0s
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deployment context
+        run: |
+          echo "::group::GitHub context"
+          echo "Repository: ${GITHUB_REPOSITORY}"
+          echo "Actor: ${GITHUB_ACTOR}"
+          echo "Ref: ${GITHUB_REF}"
+          echo "SHA: ${GITHUB_SHA}"
+          echo "Workflow: ${GITHUB_WORKFLOW}"
+          echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          echo "::endgroup::"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          echo "::group::npm ci"
+          npm ci
+          echo "::endgroup::"
+
+      - name: Lint
+        run: |
+          echo "::group::npm run lint"
+          npm run lint
+          echo "::endgroup::"
+
+      - name: Build app
+        run: |
+          echo "::group::npm run build"
+          npm run build
+          echo "::endgroup::"
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set image metadata
+        id: meta
+        run: |
+          IMAGE_NAME="$(echo "ghcr.io/${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')"
+          echo "image_name=${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "sha_tag=${IMAGE_NAME}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "latest_tag=${IMAGE_NAME}:latest" >> "$GITHUB_OUTPUT"
+          echo "::notice::Docker image will be pushed as ${IMAGE_NAME}:${GITHUB_SHA} and ${IMAGE_NAME}:latest"
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.sha_tag }}
+            ${{ steps.meta.outputs.latest_tag }}
+
+      - name: Validate deployment inputs
+        env:
+          APP_HOST: ${{ secrets.APP_HOST }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY_B64: ${{ secrets.VPS_SSH_KEY_B64 }}
+          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT || 22 }}
+        run: |
+          missing=0
+          for name in APP_HOST DATABASE_URL GHCR_TOKEN VPS_HOST VPS_USER VPS_SSH_KEY_B64; do
+            if [ -z "${!name}" ]; then
+              echo "::error::${name} is empty or missing."
+              missing=1
+            else
+              echo "::notice::${name} is configured."
+            fi
+          done
+          echo "::notice::VPS_SSH_PORT=${VPS_SSH_PORT}"
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Prepare rendered manifests
+        env:
+          APP_HOST: ${{ secrets.APP_HOST }}
+        run: |
+          mkdir -p rendered
+          cp k8s/*.yaml rendered/
+          sed -i "s|ghcr.io/OWNER/REPO:latest|${{ steps.meta.outputs.sha_tag }}|g" rendered/deployment.yaml
+          sed -i "s|APP_HOST_PLACEHOLDER|${APP_HOST}|g" rendered/ingress.yaml
+          echo "::group::Rendered manifest summary"
+          grep -n "image:" rendered/deployment.yaml
+          sed -n 's/^\([[:space:]]*-[[:space:]]*host:\).*/\1 <configured>/p' rendered/ingress.yaml
+          echo "::endgroup::"
+
+      - name: Install SSH private key
+        env:
+          SSH_PRIVATE_KEY_B64: ${{ secrets.VPS_SSH_KEY_B64 }}
+        run: |
+          if [ -z "$SSH_PRIVATE_KEY_B64" ]; then
+            echo "::error::VPS_SSH_KEY_B64 is empty. Add the base64-encoded private key as a GitHub repository secret."
+            exit 1
+          fi
+
+          KEY_PATH="${RUNNER_TEMP}/vps_deploy_key"
+          printf '%s' "$SSH_PRIVATE_KEY_B64" | base64 --decode > "$KEY_PATH"
+          chmod 600 "$KEY_PATH"
+
+          if ! grep -q "BEGIN .*PRIVATE KEY" "$KEY_PATH"; then
+            echo "::error::Decoded VPS_SSH_KEY_B64 is not a private key. Encode the full private key, including BEGIN and END lines."
+            exit 1
+          fi
+
+          if ! ssh-keygen -y -f "$KEY_PATH" > /dev/null; then
+            echo "::error::Decoded VPS_SSH_KEY_B64 is not readable by ssh-keygen."
+            exit 1
+          fi
+          echo "::notice::SSH deploy key decoded and validated."
+
+      - name: Validate GHCR pull token
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          if [ -z "$GHCR_TOKEN" ]; then
+            echo "::error::GHCR_TOKEN is empty. Add a GitHub token with read:packages permission so Kubernetes can pull the private image."
+            exit 1
+          fi
+          echo "::notice::GHCR_TOKEN is configured."
+
+      - name: Verify VPS SSH and k0s access
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key_path: ${{ runner.temp }}/vps_deploy_key
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          script: |
+            set -e
+            echo "SSH authentication succeeded."
+            if [ "$(id -u)" -eq 0 ]; then
+              KUBECTL="k0s kubectl --kubeconfig /var/lib/k0s/pki/admin.conf"
+            else
+              KUBECTL="sudo -n k0s kubectl --kubeconfig /var/lib/k0s/pki/admin.conf"
+            fi
+            echo "Using kubectl command: $KUBECTL"
+            $KUBECTL get nodes
+
+      - name: Copy manifests to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT || 22 }}
+        run: |
+          set -e
+          KEY_PATH="${RUNNER_TEMP}/vps_deploy_key"
+          REMOTE="${VPS_USER}@${VPS_HOST}"
+          SSH_OPTS=(-i "$KEY_PATH" -p "$VPS_SSH_PORT" -o StrictHostKeyChecking=accept-new)
+          SCP_OPTS=(-i "$KEY_PATH" -P "$VPS_SSH_PORT" -o StrictHostKeyChecking=accept-new)
+          echo "::notice::Copying rendered manifests to VPS:/tmp/gaming-feed-deploy"
+          ssh "${SSH_OPTS[@]}" "${REMOTE}" "rm -rf /tmp/gaming-feed-deploy && mkdir -p /tmp/gaming-feed-deploy"
+          scp "${SCP_OPTS[@]}" rendered/*.yaml "${REMOTE}:/tmp/gaming-feed-deploy/"
+          ssh "${SSH_OPTS[@]}" "${REMOTE}" "ls -la /tmp/gaming-feed-deploy"
+
+      - name: Apply manifests on k0s
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          ARTICLES_TABLE: ${{ secrets.ARTICLES_TABLE }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key_path: ${{ runner.temp }}/vps_deploy_key
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          envs: ARTICLES_TABLE,DATABASE_URL,GHCR_TOKEN
+          script: |
+            set -e
+            if [ "$(id -u)" -eq 0 ]; then
+              KUBECTL="k0s kubectl --kubeconfig /var/lib/k0s/pki/admin.conf"
+            else
+              KUBECTL="sudo -n k0s kubectl --kubeconfig /var/lib/k0s/pki/admin.conf"
+            fi
+            echo "Applying Kubernetes manifests..."
+            $KUBECTL apply -f /tmp/gaming-feed-deploy/namespace.yaml
+            echo "Upserting app runtime secret..."
+            if [ -n "$ARTICLES_TABLE" ]; then
+              $KUBECTL create secret generic gaming-feed-secrets \
+                --namespace gaming-feed \
+                --from-literal=DATABASE_URL="${DATABASE_URL}" \
+                --from-literal=ARTICLES_TABLE="${ARTICLES_TABLE}" \
+                --dry-run=client \
+                -o yaml | $KUBECTL apply -f -
+            else
+              $KUBECTL create secret generic gaming-feed-secrets \
+                --namespace gaming-feed \
+                --from-literal=DATABASE_URL="${DATABASE_URL}" \
+                --dry-run=client \
+                -o yaml | $KUBECTL apply -f -
+            fi
+            echo "Upserting GHCR image pull secret..."
+            $KUBECTL create secret docker-registry ghcr-auth \
+              --namespace gaming-feed \
+              --docker-server=ghcr.io \
+              --docker-username="${{ github.repository_owner }}" \
+              --docker-password="${GHCR_TOKEN}" \
+              --dry-run=client \
+              -o yaml | $KUBECTL apply -f -
+            $KUBECTL apply -f /tmp/gaming-feed-deploy/deployment.yaml
+            $KUBECTL apply -f /tmp/gaming-feed-deploy/service.yaml
+            $KUBECTL apply -f /tmp/gaming-feed-deploy/ingress.yaml
+            echo "Waiting for deployment rollout..."
+            if ! $KUBECTL rollout status deployment/gaming-feed -n gaming-feed --timeout=180s; then
+              echo "Rollout failed. Collecting Kubernetes diagnostics..."
+              $KUBECTL get pods,deploy,rs,svc,ingress -n gaming-feed -o wide
+              $KUBECTL describe deployment/gaming-feed -n gaming-feed
+              $KUBECTL describe pods -n gaming-feed -l app=gaming-feed
+              $KUBECTL logs -n gaming-feed -l app=gaming-feed --all-containers --tail=120 || true
+              $KUBECTL get events -n gaming-feed --sort-by=.lastTimestamp
+              exit 1
+            fi
+            echo "Rollout succeeded."
+            $KUBECTL get pods,deploy,svc,ingress -n gaming-feed -o wide
+            $KUBECTL get deployment gaming-feed -n gaming-feed -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'

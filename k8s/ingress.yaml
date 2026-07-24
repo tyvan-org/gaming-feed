@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gaming-feed
+  namespace: gaming-feed
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - APP_HOST_PLACEHOLDER
+      secretName: gaming-feed-tls
+  rules:
+    - host: APP_HOST_PLACEHOLDER
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gaming-feed
+                port:
+                  number: 80
