@@ -1,4 +1,4 @@
-import { getArticlesTableSql, pool } from "@/lib/db";
+import { getArticlesTableSql, getPool } from "@/lib/db";
 
 const sourceLabels: Record<string, string> = {
   ign: "IGN",
@@ -28,6 +28,7 @@ export function formatSourceLabel(sourceId: string) {
 
 export async function getSourceOptions(): Promise<SourceOption[]> {
   const articlesTable = getArticlesTableSql();
+  const pool = getPool();
   const result = await pool.query<{ source_id: string; count: string }>(
     `
       SELECT source_id, count(*)::text AS count

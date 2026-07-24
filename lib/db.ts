@@ -5,6 +5,11 @@ type GlobalWithPool = typeof globalThis & {
 };
 
 const globalForPool = globalThis as GlobalWithPool;
+let modulePool: Pool | undefined;
+
+function getCachedPool() {
+  return globalForPool.pgPool ?? modulePool;
+}
 
 function buildPoolConfig(): PoolConfig {
   const databaseUrl = process.env.DATABASE_URL;
@@ -43,10 +48,21 @@ function buildPoolConfig(): PoolConfig {
   return config;
 }
 
-export const pool = globalForPool.pgPool ?? new Pool(buildPoolConfig());
+export function getPool() {
+  const existingPool = getCachedPool();
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPool.pgPool = pool;
+  if (existingPool) {
+    return existingPool;
+  }
+
+  const pool = new Pool(buildPoolConfig());
+  modulePool = pool;
+
+  if (process.env.NODE_ENV !== "production") {
+    globalForPool.pgPool = pool;
+  }
+
+  return pool;
 }
 
 function quoteIdentifier(identifier: string) {

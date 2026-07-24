@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { getArticlesTableSql, pool } from "@/lib/db";
+import { getArticlesTableSql, getPool } from "@/lib/db";
 
 export const articleQuerySchema = z.object({
   page: z.coerce.number().int().positive().catch(1),
@@ -87,6 +87,7 @@ export async function getArticles(query: ArticleQuery): Promise<ArticlePage> {
   const offset = (page - 1) * limit;
   const where = buildWhereClause(query);
   const articlesTable = getArticlesTableSql();
+  const pool = getPool();
   const limitIndex = where.values.length + 1;
   const offsetIndex = where.values.length + 2;
 
