@@ -215,6 +215,9 @@ jobs:
             echo "Applying Kubernetes manifests..."
             $KUBECTL apply -f /tmp/gaming-feed-deploy/namespace.yaml
             echo "Upserting app runtime secret..."
+            DATABASE_URL_MASKED="$(printf '%s' "$DATABASE_URL" | sed -E 's#(postgres(ql)?://)[^:/@]+(:[^@]*)?@#\1<credentials>@#')"
+            DATABASE_URL_SHA="$(printf '%s' "$DATABASE_URL" | sha256sum | awk '{print substr($1,1,12)}')"
+            echo "Runtime DATABASE_URL value=${DATABASE_URL_MASKED} length=${#DATABASE_URL} sha256=${DATABASE_URL_SHA}"
             if [ -n "$ARTICLES_TABLE" ]; then
               $KUBECTL create secret generic gaming-feed-secrets \
                 --namespace tyvan-tools \
