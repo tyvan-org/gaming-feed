@@ -217,21 +217,21 @@ jobs:
             echo "Upserting app runtime secret..."
             if [ -n "$ARTICLES_TABLE" ]; then
               $KUBECTL create secret generic gaming-feed-secrets \
-                --namespace gaming-feed \
+                --namespace tyvan-tools \
                 --from-literal=DATABASE_URL="${DATABASE_URL}" \
                 --from-literal=ARTICLES_TABLE="${ARTICLES_TABLE}" \
                 --dry-run=client \
                 -o yaml | $KUBECTL apply -f -
             else
               $KUBECTL create secret generic gaming-feed-secrets \
-                --namespace gaming-feed \
+                --namespace tyvan-tools \
                 --from-literal=DATABASE_URL="${DATABASE_URL}" \
                 --dry-run=client \
                 -o yaml | $KUBECTL apply -f -
             fi
             echo "Upserting GHCR image pull secret..."
             $KUBECTL create secret docker-registry ghcr-auth \
-              --namespace gaming-feed \
+              --namespace tyvan-tools \
               --docker-server=ghcr.io \
               --docker-username="${{ github.repository_owner }}" \
               --docker-password="${GHCR_TOKEN}" \
@@ -241,15 +241,15 @@ jobs:
             $KUBECTL apply -f /tmp/gaming-feed-deploy/service.yaml
             $KUBECTL apply -f /tmp/gaming-feed-deploy/ingress.yaml
             echo "Waiting for deployment rollout..."
-            if ! $KUBECTL rollout status deployment/gaming-feed -n gaming-feed --timeout=180s; then
+            if ! $KUBECTL rollout status deployment/gaming-feed -n tyvan-tools --timeout=180s; then
               echo "Rollout failed. Collecting Kubernetes diagnostics..."
-              $KUBECTL get pods,deploy,rs,svc,ingress -n gaming-feed -o wide
-              $KUBECTL describe deployment/gaming-feed -n gaming-feed
-              $KUBECTL describe pods -n gaming-feed -l app=gaming-feed
-              $KUBECTL logs -n gaming-feed -l app=gaming-feed --all-containers --tail=120 || true
-              $KUBECTL get events -n gaming-feed --sort-by=.lastTimestamp
+              $KUBECTL get pods,deploy,rs,svc,ingress -n tyvan-tools -o wide
+              $KUBECTL describe deployment/gaming-feed -n tyvan-tools
+              $KUBECTL describe pods -n tyvan-tools -l app=gaming-feed
+              $KUBECTL logs -n tyvan-tools -l app=gaming-feed --all-containers --tail=120 || true
+              $KUBECTL get events -n tyvan-tools --sort-by=.lastTimestamp
               exit 1
             fi
             echo "Rollout succeeded."
-            $KUBECTL get pods,deploy,svc,ingress -n gaming-feed -o wide
-            $KUBECTL get deployment gaming-feed -n gaming-feed -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+            $KUBECTL get pods,deploy,svc,ingress -n tyvan-tools -o wide
+            $KUBECTL get deployment gaming-feed -n tyvan-tools -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
