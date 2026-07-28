@@ -5,6 +5,7 @@ metadata:
   namespace: tyvan-tools
   labels:
     app: gaming-feed
+    postgres-access: product-core
 spec:
   replicas: 1
   revisionHistoryLimit: 3
@@ -15,6 +16,7 @@ spec:
     metadata:
       labels:
         app: gaming-feed
+        postgres-access: product-core
     spec:
       imagePullSecrets:
         - name: ghcr-auth
