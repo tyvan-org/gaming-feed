@@ -87,8 +87,6 @@ jobs:
           tags: |
             ${{ steps.meta.outputs.sha_tag }}
             ${{ steps.meta.outputs.latest_tag }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Validate deployment inputs
         env:
