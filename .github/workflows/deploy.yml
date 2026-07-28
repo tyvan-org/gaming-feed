@@ -240,6 +240,8 @@ jobs:
             $KUBECTL apply -f /tmp/gaming-feed-deploy/deployment.yaml
             $KUBECTL apply -f /tmp/gaming-feed-deploy/service.yaml
             $KUBECTL apply -f /tmp/gaming-feed-deploy/ingress.yaml
+            echo "Restarting deployment so pods read the latest runtime secrets..."
+            $KUBECTL rollout restart deployment/gaming-feed -n tyvan-tools
             echo "Waiting for deployment rollout..."
             if ! $KUBECTL rollout status deployment/gaming-feed -n tyvan-tools --timeout=180s; then
               echo "Rollout failed. Collecting Kubernetes diagnostics..."
