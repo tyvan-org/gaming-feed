@@ -31,30 +31,6 @@ jobs:
           echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           echo "::endgroup::"
 
-      - name: Validate deployment inputs
-        env:
-          APP_HOST: ${{ secrets.APP_HOST }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_SSH_KEY_B64: ${{ secrets.VPS_SSH_KEY_B64 }}
-          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT || 22 }}
-        run: |
-          missing=0
-          for name in APP_HOST DATABASE_URL GHCR_TOKEN VPS_HOST VPS_USER VPS_SSH_KEY_B64; do
-            if [ -z "${!name}" ]; then
-              echo "::error::${name} is empty or missing."
-              missing=1
-            else
-              echo "::notice::${name} is configured."
-            fi
-          done
-          echo "::notice::VPS_SSH_PORT=${VPS_SSH_PORT}"
-          if [ "$missing" -ne 0 ]; then
-            exit 1
-          fi
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -113,6 +89,30 @@ jobs:
             ${{ steps.meta.outputs.latest_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Validate deployment inputs
+        env:
+          APP_HOST: ${{ secrets.APP_HOST }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY_B64: ${{ secrets.VPS_SSH_KEY_B64 }}
+          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT || 22 }}
+        run: |
+          missing=0
+          for name in APP_HOST DATABASE_URL GHCR_TOKEN VPS_HOST VPS_USER VPS_SSH_KEY_B64; do
+            if [ -z "${!name}" ]; then
+              echo "::error::${name} is empty or missing."
+              missing=1
+            else
+              echo "::notice::${name} is configured."
+            fi
+          done
+          echo "::notice::VPS_SSH_PORT=${VPS_SSH_PORT}"
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
 
       - name: Prepare rendered manifests
         env:
