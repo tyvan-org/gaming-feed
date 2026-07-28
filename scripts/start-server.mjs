@@ -17,10 +17,10 @@ function maskDatabaseUrl(value) {
   try {
     const parsedUrl = new URL(value);
     if (parsedUrl.username) {
-      parsedUrl.username = "<user>";
+      parsedUrl.username = "redacted";
     }
     if (parsedUrl.password) {
-      parsedUrl.password = "<password>";
+      parsedUrl.password = "redacted";
     }
 
     return parsedUrl.toString();
