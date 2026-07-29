@@ -7,6 +7,12 @@ const sourceLabels: Record<string, string> = {
   polygon: "Polygon",
   kotaku: "Kotaku",
   eurogamer: "Eurogamer",
+  rockpapershotgun: "Rock Paper Shotgun",
+  "steam-news": "Steam News",
+  "steam-sale": "Steam Sale",
+  "youtube-indie-games-hub": "Indie Games Hub",
+  "youtube-gametrailers": "GameTrailers",
+  "youtube-playstation": "PlayStation",
 };
 
 export type SourceOption = {
@@ -44,4 +50,3 @@ export async function getSourceOptions(): Promise<SourceOption[]> {
     count: Number(source.count),
   }));
 }
-
