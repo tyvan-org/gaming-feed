@@ -3,7 +3,7 @@ import { ExternalLink } from "lucide-react";
 import { ArticleThumbnail } from "@/components/ArticleThumbnail";
 import type { ArticleListItem } from "@/lib/articles";
 import { formatArticleDate } from "@/lib/formatDate";
-import { formatSourceLabel } from "@/lib/sources";
+import { formatSourceLabel } from "@/lib/sourceLabels";
 
 type ArticleCardProps = {
   article: ArticleListItem;

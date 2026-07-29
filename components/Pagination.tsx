@@ -4,19 +4,19 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 type PaginationProps = {
   page: number;
   totalPages: number;
-  source?: string;
+  feed?: "articles" | "videos";
   q?: string;
 };
 
-function pageHref(page: number, source: string | undefined, q: string | undefined) {
+function pageHref(page: number, feed: "articles" | "videos" | undefined, q: string | undefined) {
   const params = new URLSearchParams();
 
   if (page > 1) {
     params.set("page", page.toString());
   }
 
-  if (source) {
-    params.set("source", source);
+  if (feed === "videos") {
+    params.set("feed", feed);
   }
 
   if (q) {
@@ -27,7 +27,7 @@ function pageHref(page: number, source: string | undefined, q: string | undefine
   return query ? `/?${query}` : "/";
 }
 
-export function Pagination({ page, totalPages, source, q }: PaginationProps) {
+export function Pagination({ page, totalPages, feed = "articles", q }: PaginationProps) {
   if (totalPages <= 1) {
     return null;
   }
@@ -38,7 +38,7 @@ export function Pagination({ page, totalPages, source, q }: PaginationProps) {
   return (
     <nav className="flex items-center justify-between gap-3 px-5 pt-4" aria-label="Pagination">
       <Link
-        href={pageHref(previousPage, source, q)}
+        href={pageHref(previousPage, feed, q)}
         aria-disabled={page <= 1}
         className={`inline-flex h-9 items-center gap-2 rounded-md border px-3 text-xs font-bold uppercase tracking-wide transition ${
           page <= 1
@@ -53,7 +53,7 @@ export function Pagination({ page, totalPages, source, q }: PaginationProps) {
         Page {page} of {totalPages}
       </span>
       <Link
-        href={pageHref(nextPage, source, q)}
+        href={pageHref(nextPage, feed, q)}
         aria-disabled={page >= totalPages}
         className={`inline-flex h-9 items-center gap-2 rounded-md border px-3 text-xs font-bold uppercase tracking-wide transition ${
           page >= totalPages

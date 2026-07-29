@@ -1,0 +1,90 @@
+[
+  {
+    "id": "ign",
+    "name": "IGN",
+    "enabled": true,
+    "type": "rss",
+    "url": "https://www.ign.com/rss/articles/feed",
+    "interval": "10m",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+  },
+  {
+    "id": "pcgamer",
+    "name": "PC Gamer",
+    "enabled": true,
+    "type": "rss",
+    "url": "https://www.pcgamer.com/rss",
+    "interval": "10m",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+  },
+  {
+    "id": "rockpapershotgun",
+    "name": "Rock Paper Shotgun",
+    "enabled": true,
+    "type": "rss",
+    "url": "https://www.rockpapershotgun.com/feed",
+    "interval": "10m",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+  },
+  {
+    "id": "steam-news",
+    "name": "Steam News",
+    "enabled": true,
+    "type": "rss",
+    "url": "https://store.steampowered.com/feeds/news/collection/steam",
+    "interval": "10m",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+  },
+  {
+    "id": "steam-sale",
+    "name": "Steam Sale",
+    "enabled": true,
+    "type": "rss",
+    "url": "https://store.steampowered.com/feeds/news/collection/press",
+    "interval": "10m",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+  },
+  {
+    "id": "youtube-indie-games-hub",
+    "name": "Indie Games Hub",
+    "enabled": true,
+    "type": "rss",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCt8CJiye87FMbEwt0npPMuQ",
+    "interval": "10m",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+  },
+  {
+    "id": "youtube-gametrailers",
+    "name": "GameTrailers",
+    "enabled": true,
+    "type": "rss",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCJx5KP-pCUmL9eZUv-mIcNw",
+    "interval": "10m",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+  },
+  {
+    "id": "youtube-playstation",
+    "name": "PlayStation",
+    "enabled": true,
+    "type": "rss",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC-2Y8dQb0S6DtpxNgAKoJKA",
+    "interval": "10m",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+  }
+]

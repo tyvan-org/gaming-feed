@@ -1,12 +1,9 @@
 import { AlertTriangle } from "lucide-react";
-import Link from "next/link";
 
 import { ArticleList } from "@/components/ArticleList";
 import { FeedFilters } from "@/components/FeedFilters";
-import { Pagination } from "@/components/Pagination";
 import { SearchInput } from "@/components/SearchInput";
 import { getArticles, parseArticleQuery } from "@/lib/articles";
-import { getSourceOptions } from "@/lib/sources";
 
 export const dynamic = "force-dynamic";
 
@@ -19,38 +16,34 @@ export default async function Home({ searchParams }: HomeProps) {
   const query = parseArticleQuery(resolvedSearchParams);
 
   try {
-    const [articlePage, sources] = await Promise.all([
-      getArticles(query),
-      getSourceOptions(),
-    ]);
+    const articlePage = await getArticles(query);
+    const itemLabel = query.feed === "videos" ? "video" : "article";
 
     return (
       <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-5 sm:px-6 lg:px-8">
         <header className="mb-4 border-b border-line">
           <div className="flex flex-col gap-4 pb-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <Link href="/" className="inline-flex items-end">
-                <span className="border-b border-dotted border-mist pb-1 text-base font-bold uppercase tracking-wide text-mist sm:text-lg">
-                  R/PCGAMING
-                </span>
-              </Link>
-              <SearchInput defaultValue={query.q} source={query.source} />
+              <div className="flex min-w-0 items-end gap-3">
+                <FeedFilters activeFeed={query.feed} q={query.q} />
+              </div>
+              <SearchInput defaultValue={query.q} feed={query.feed} />
             </div>
-            <FeedFilters sources={sources} activeSource={query.source} q={query.q} />
           </div>
         </header>
 
         <section className="rounded-md border border-line bg-panel py-4">
           <div className="mb-1 px-4 text-xs font-bold uppercase tracking-wide text-mist sm:px-5">
-            {articlePage.pagination.total.toLocaleString()} article
+            {articlePage.pagination.total.toLocaleString()} {itemLabel}
             {articlePage.pagination.total === 1 ? "" : "s"}
           </div>
 
-          <ArticleList articles={articlePage.items} />
-          <Pagination
-            page={articlePage.pagination.page}
-            totalPages={articlePage.pagination.totalPages}
-            source={query.source}
+          <ArticleList
+            key={`${query.feed}:${query.q ?? ""}`}
+            articles={articlePage.items}
+            feed={query.feed}
+            itemLabel={itemLabel}
+            pagination={articlePage.pagination}
             q={query.q}
           />
         </section>

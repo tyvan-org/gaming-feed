@@ -4,8 +4,8 @@ import { getArticlesTableSql, getPool } from "@/lib/db";
 
 export const articleQuerySchema = z.object({
   page: z.coerce.number().int().positive().catch(1),
-  limit: z.coerce.number().int().min(1).max(50).catch(20),
-  source: z.string().trim().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).catch(5),
+  feed: z.enum(["articles", "videos"]).catch("articles"),
   q: z.string().trim().min(1).optional(),
 });
 
@@ -62,9 +62,10 @@ function buildWhereClause(query: ArticleQuery) {
   const conditions: string[] = [];
   const values: Array<string | number> = [];
 
-  if (query.source) {
-    values.push(query.source);
-    conditions.push(`source_id = $${values.length}`);
+  if (query.feed === "videos") {
+    conditions.push("source_id LIKE 'youtube-%'");
+  } else {
+    conditions.push("source_id NOT LIKE 'youtube-%'");
   }
 
   if (query.q) {
@@ -83,7 +84,7 @@ function buildWhereClause(query: ArticleQuery) {
 
 export async function getArticles(query: ArticleQuery): Promise<ArticlePage> {
   const page = query.page;
-  const limit = query.limit;
+  const limit = 5;
   const offset = (page - 1) * limit;
   const where = buildWhereClause(query);
   const articlesTable = getArticlesTableSql();

@@ -2,15 +2,17 @@ import { Search } from "lucide-react";
 
 type SearchInputProps = {
   defaultValue?: string;
-  source?: string;
+  feed?: "articles" | "videos";
 };
 
-export function SearchInput({ defaultValue = "", source }: SearchInputProps) {
+export function SearchInput({ defaultValue = "", feed = "articles" }: SearchInputProps) {
+  const itemLabel = feed === "videos" ? "videos" : "articles";
+
   return (
     <form action="/" className="flex min-w-0 flex-1 items-center gap-2">
-      {source ? <input type="hidden" name="source" value={source} /> : null}
+      {feed === "videos" ? <input type="hidden" name="feed" value={feed} /> : null}
       <label className="relative block min-w-0 flex-1">
-        <span className="sr-only">Search articles</span>
+        <span className="sr-only">Search {itemLabel}</span>
         <Search
           aria-hidden="true"
           className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mist"
